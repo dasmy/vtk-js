@@ -62,6 +62,16 @@ function vtkProperty(publicAPI, model) {
     return [].concat(model.color);
   };
 
+  publicAPI.setSpecularPower = (specularPower) => {
+    const roughness = 1 / Math.max(1.0, specularPower);
+    if (model.roughness !== roughness) {
+      model.roughness = roughness;
+      publicAPI.modified();
+    }
+  };
+
+  publicAPI.getSpecularPower = () => 1 / model.roughness;
+
   publicAPI.addShaderVariable = notImplemented('AddShaderVariable');
 
   publicAPI.setInterpolationToFlat = () =>
@@ -96,6 +106,11 @@ const DEFAULT_VALUES = {
 
   ambient: 0,
   diffuse: 1,
+  metallic: 0,
+  roughness: 0.5,
+  normalStrength: 1,
+  emission: 1,
+  baseIOR: 1.45,
   specular: 0,
   specularPower: 1,
   opacity: 1,
@@ -125,6 +140,11 @@ export function extend(publicAPI, model, initialValues = {}) {
     'interpolation',
     'ambient',
     'diffuse',
+    'metallic',
+    'roughness',
+    'normalStrength',
+    'emission',
+    'baseIOR',
     'specular',
     'specularPower',
     'opacity',
@@ -134,6 +154,12 @@ export function extend(publicAPI, model, initialValues = {}) {
     'backfaceCulling',
     'frontfaceCulling',
     'representation',
+    'diffuseTexture',
+    'metallicTexture',
+    'roughnessTexture',
+    'normalTexture',
+    'ambientOcclusionTexture',
+    'emissionTexture',
   ]);
   macro.setGetArray(
     publicAPI,

@@ -5,7 +5,7 @@ import { RGBColor, Vector3 } from "../../../types";
 export enum LIGHT_TYPES {
 	'HeadLight',
 	'CameraLight',
-	'SceneLight'
+	'SceneLight',
 }
 
 export interface ILightInitialValues {
@@ -17,6 +17,7 @@ export interface ILightInitialValues {
 	positional?: boolean;
 	exponent?: number;
 	coneAngle?: number;
+	coneFalloff?: number;
 	attenuationValues?: number[];
 	lightType?: LIGHT_TYPES;
 	shadowAttenuation?: number;
@@ -53,6 +54,14 @@ export interface vtkLight extends vtkObject {
 	 * lighting effects just a positional light.
 	 */
 	getConeAngle(): number;
+
+	/**
+	 * Get the lighting cone angle of a positional light in degrees.
+	 * This is the angle between the axis of the cone and a ray along the edge
+	 * of the cone. A value of 90 (or more) indicates that you want no spot
+	 * lighting effects just a positional light.
+	 */
+	getConeFalloff(): number;
 
 	/**
 	 * Set the position and focal point of a light based on elevation and azimuth.
@@ -175,6 +184,16 @@ export interface vtkLight extends vtkObject {
 	setConeAngle(coneAngle: number): boolean;
 
 	/**
+	 * Set the lighting cone angle of a positional light in degrees.
+	 * This is the angle between the axis of the cone and a ray along the edge
+	 * of the cone. 
+	 * A value of 90 (or more) indicates that you want no spot lighting effects
+	 * just a positional light.
+	 * @param {Number} coneFalloff The cone angle.
+	 */
+	setConeFalloff(coneFalloff: number): boolean;
+
+	/**
 	 * Set the position and focal point of a light based on elevation and
 	 * azimuth. The light is moved so it is shining from the given angle. Angles
 	 * are given in degrees. If the light is a positional light, it is made
@@ -183,6 +202,20 @@ export interface vtkLight extends vtkObject {
 	 * @param {Number} azimuth 
 	 */
 	setDirectionAngle(elevation: number, azimuth: number): boolean;
+
+	/**
+	 * Set the direction vector of the light from X, Y, and Z values
+	 * @param {Number} x The x coordinate.
+	 * @param {Number} y The y coordinate.
+	 * @param {Number} z The z coordinate.
+	 */
+	setDirection(x: number, y: number, z: number): boolean;
+
+	/**
+	 * Set the direction vector of the light from X, Y, and Z values
+	 * @param {Vector3} direction
+	 */
+	setDirection(direction: Vector3): boolean;
 
 	/**
 	 * Set the exponent of the cosine used in positional lighting.
@@ -299,7 +332,7 @@ export function extend(publicAPI: object, model: object, initialValues?: ILightI
 /**
  * Method use to create a new instance of vtkLight with the focal point at the origin and its position
  * set to [0, 0, 1]. The light is a SceneLight, its color is white, intensity=1, the light is turned on, 
- * positional lighting is off, coneAngle=30, AttenuationValues=[1, 0, 0], exponent=1 and the transformMatrix is null.
+ * positional lighting is off, coneAngle=30, coneFalloff=5, AttenuationValues=[1, 0, 0], exponent=1 and the transformMatrix is null.
  * @param {ILightInitialValues} [initialValues] for pre-setting some of its content
  */
 export function newInstance(initialValues?: ILightInitialValues): vtkLight;

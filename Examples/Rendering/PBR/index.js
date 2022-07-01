@@ -1,0 +1,283 @@
+import 'vtk.js/Sources/favicon';
+
+// Load the rendering pieces we want to use (for both WebGL and WebGPU)
+import 'vtk.js/Sources/Rendering/Profiles/Geometry';
+
+import vtkActor from 'vtk.js/Sources/Rendering/Core/Actor';
+import vtkLight from 'vtk.js/Sources/Rendering/Core/Light';
+import vtkFullScreenRenderWindow from 'vtk.js/Sources/Rendering/Misc/FullScreenRenderWindow';
+import vtkOBJReader from 'vtk.js/Sources/IO/Misc/OBJReader';
+import vtkMapper from 'vtk.js/Sources/Rendering/Core/Mapper';
+import vtkTexture from 'vtk.js/Sources/Rendering/Core/Texture';
+import vtkPolyDataNormals from 'vtk.js/Sources/Filters/Core/PolyDataNormals';
+// import vtkPolyDataTangents from 'vtk.js/Sources/Filters/Core/PolyDataTangents';
+
+import vtkFPSMonitor from 'vtk.js/Sources/Interaction/UI/FPSMonitor';
+
+import controlPanel from './controller.html';
+
+// ----------------------------------------------------------------------------
+// Standard rendering code setup
+// ----------------------------------------------------------------------------
+
+const fullScreenRenderer = vtkFullScreenRenderWindow.newInstance({
+  background: [0.08, 0.08, 0.08],
+});
+const renderer = fullScreenRenderer.getRenderer();
+const renderWindow = fullScreenRenderer.getRenderWindow();
+
+const fpsMonitor = vtkFPSMonitor.newInstance();
+const fpsElm = fpsMonitor.getFpsMonitorContainer();
+fpsElm.style.position = 'absolute';
+fpsElm.style.left = '10px';
+fpsElm.style.bottom = '10px';
+fpsElm.style.background = 'rgba(255,255,255,0.5)';
+fpsElm.style.borderRadius = '5px';
+
+fpsMonitor.setContainer(document.querySelector('body'));
+fpsMonitor.setRenderWindow(renderWindow);
+
+fullScreenRenderer.setResizeCallback(fpsMonitor.update);
+
+// ----------------------------------------------------------------------------
+// Example code
+// ----------------------------------------------------------------------------
+// create a filter on the fly, sort of cool, this is a random scalars
+// filter we create inline, for a simple cone you would not need
+// this
+// ----------------------------------------------------------------------------
+
+function hexToRGB(hex) {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result
+    ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16),
+      }
+    : null;
+}
+function createTexture(w, h, src) {
+  const _img = new Image(w, h);
+  _img.crossOrigin = 'Anonymous';
+  _img.src = src;
+  const _tex = vtkTexture.newInstance();
+  _tex.setImage(_img);
+
+  _tex.setInterpolate(true);
+  _tex.setEdgeClamp(true);
+
+  return _tex;
+}
+
+// ---------------------------------
+// Model and texture loading
+// ---------------------------------
+
+const reader = vtkOBJReader.newInstance();
+const mapper = vtkMapper.newInstance();
+const actor = vtkActor.newInstance();
+
+reader.setSplitMode('usemtl');
+reader.setUrl(`${__BASE_PATH__}/data/pbr/helmet.obj`).then(() => {
+  const polydata = reader.getOutputData(0);
+  // Normals
+  const normals = vtkPolyDataNormals.newInstance();
+  // console.log(normals);
+  normals.setInputData(polydata);
+  // optional recalculation
+  normals.update();
+
+  // Setting default values
+  actor.setPosition(0.0, 0.0, 0.0);
+  actor.getProperty().setRoughness(1.0);
+  actor.getProperty().setEmission(5.0);
+  actor.getProperty().setMetallic(1.0);
+  actor.getProperty().setNormalStrength(0.5);
+  actor.getProperty().setBaseIOR(1.33);
+  actor.getProperty().setDiffuseColor(1.0, 1.0, 1.0);
+  actor.getProperty().setAmbientColor(1.0, 1.0, 1.0);
+
+  // Texture loading
+  const diffuseTex = createTexture(
+    4096,
+    4096,
+    `${__BASE_PATH__}/data/pbr/diffuse.png`
+  );
+  const roughnessTex = createTexture(
+    4096,
+    4096,
+    `${__BASE_PATH__}/data/pbr/roughness.png`
+  );
+  const metallicTex = createTexture(
+    4096,
+    4096,
+    `${__BASE_PATH__}/data/pbr/metallic.png`
+  );
+  const emissionTex = createTexture(
+    4096,
+    4096,
+    `${__BASE_PATH__}/data/pbr/emission.png`
+  );
+  const normalTex = createTexture(
+    4096,
+    4096,
+    `${__BASE_PATH__}/data/pbr/normal.png`
+  );
+
+  actor.getProperty().setDiffuseTexture(diffuseTex);
+  actor.getProperty().setRoughnessTexture(roughnessTex);
+  actor.getProperty().setMetallicTexture(metallicTex);
+  actor.getProperty().setEmissionTexture(emissionTex);
+  actor.getProperty().setNormalTexture(normalTex);
+
+  actor.setMapper(mapper);
+  mapper.setInputData(polydata);
+
+  renderer.addActor(actor);
+  renderWindow.render();
+});
+
+// ----------------------------------------------
+// Adding lights and other scene properties
+// ----------------------------------------------
+
+const baseLight = vtkLight.newInstance({
+  positional: false,
+  color: [1, 0.95, 1],
+  intensity: 0.5,
+});
+baseLight.setDirectionVector([0, 0.5, 1]);
+renderer.addLight(baseLight);
+
+const rimLight = vtkLight.newInstance({
+  positional: false,
+  color: [1, 0.95, 1],
+  intensity: 4,
+});
+rimLight.setDirectionVector([-0.4, -0.2, -1]);
+renderer.addLight(rimLight);
+
+const redLight = vtkLight.newInstance({
+  positional: false,
+  color: [1.5, 0.4, 0.2],
+  intensity: 1,
+});
+redLight.setDirectionVector([1, 0, 0]);
+renderer.addLight(redLight);
+
+const blueLight = vtkLight.newInstance({
+  positional: false,
+  color: [0.2, 0.4, 1.5],
+  intensity: 1,
+});
+blueLight.setDirectionVector([-1, 0, 0]);
+renderer.addLight(blueLight);
+
+const eyeLight1 = vtkLight.newInstance({
+  positional: true,
+  coneAngle: 90,
+  color: [0.4, 0.5, 1],
+  position: [8, 7, 23],
+  intensity: 100,
+});
+renderer.addLight(eyeLight1);
+const eyeLight2 = vtkLight.newInstance({
+  positional: true,
+  coneAngle: 90,
+  color: [0.4, 0.5, 1],
+  position: [-8, 7, 23],
+  intensity: 100,
+});
+renderer.addLight(eyeLight2);
+
+// renderer.getActiveCamera().setParallelProjection(true);
+renderer.resetCamera();
+renderWindow.render();
+fpsMonitor.update();
+
+// -----------------------------------------------------------
+// UI control handling
+// -----------------------------------------------------------
+
+fullScreenRenderer.addController(controlPanel);
+const colorChange = document.querySelector('.color');
+const roughnessChange = document.querySelector('.roughness');
+const metallicChange = document.querySelector('.metallic');
+const normalChange = document.querySelector('.normal');
+const iorChange = document.querySelector('.ior');
+
+const xChange = document.querySelector('.x');
+const yChange = document.querySelector('.y');
+const zChange = document.querySelector('.z');
+
+roughnessChange.addEventListener('input', (e) => {
+  const roughness = Number(e.target.value);
+  actor.getProperty().setRoughness(roughness);
+  renderWindow.render();
+  fpsMonitor.update();
+});
+
+metallicChange.addEventListener('input', (e) => {
+  const metallic = Number(e.target.value);
+  actor.getProperty().setMetallic(metallic);
+  renderWindow.render();
+  fpsMonitor.update();
+});
+
+normalChange.addEventListener('input', (e) => {
+  const normal = Number(e.target.value);
+  actor.getProperty().setNormalStrength(normal);
+  renderWindow.render();
+  fpsMonitor.update();
+});
+
+iorChange.addEventListener('input', (e) => {
+  const ior = Number(e.target.value);
+  actor.getProperty().setBaseIOR(ior);
+  renderWindow.render();
+  fpsMonitor.update();
+});
+
+colorChange.addEventListener('input', (e) => {
+  const color = hexToRGB(e.target.value);
+  // Setting both of them at once may not be very smart
+  actor
+    .getProperty()
+    .setDiffuseColor(color.r / 255.0, color.g / 255.0, color.b / 255.0);
+  actor
+    .getProperty()
+    .setAmbientColor(color.r / 255.0, color.g / 255.0, color.b / 255.0);
+  renderWindow.render();
+  fpsMonitor.update();
+});
+
+// x y and z position changes
+xChange.addEventListener('input', (e) => {
+  const x = Number(e.target.value);
+  actor.setPosition(x, actor.getPosition()[1], actor.getPosition()[2]);
+  renderWindow.render();
+  fpsMonitor.update();
+});
+yChange.addEventListener('input', (e) => {
+  const y = Number(e.target.value);
+  actor.setPosition(actor.getPosition()[0], y, actor.getPosition()[2]);
+  renderWindow.render();
+  fpsMonitor.update();
+});
+zChange.addEventListener('input', (e) => {
+  const z = Number(e.target.value);
+  actor.setPosition(actor.getPosition()[0], actor.getPosition()[1], z);
+  renderWindow.render();
+  fpsMonitor.update();
+});
+
+// -----------------------------------------------------------
+// Make some variables global so that you can inspect and
+// modify objects in your browser's developer console:
+// -----------------------------------------------------------
+
+global.mapper = mapper;
+global.actor = actor;
+global.renderer = renderer;
+global.renderWindow = renderWindow;
