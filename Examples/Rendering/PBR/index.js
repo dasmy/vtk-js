@@ -57,7 +57,6 @@ function hexToRGB(hex) {
       }
     : null;
 }
-
 // Texture loading helper function
 function createTexture(src) {
   const _img = new Image();

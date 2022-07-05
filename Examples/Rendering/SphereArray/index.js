@@ -39,10 +39,6 @@ fullScreenRenderer.setResizeCallback(fpsMonitor.update);
 // ----------------------------------------------------------------------------
 // Example code
 // ----------------------------------------------------------------------------
-// create a filter on the fly, sort of cool, this is a random scalars
-// filter we create inline, for a simple cone you would not need
-// this
-// ----------------------------------------------------------------------------
 
 const sphereSource = vtkSphereSource.newInstance({
   center: [0, 0, 0],
@@ -65,7 +61,7 @@ for (let r = 0; r < objectCount; r++) {
     // Setting PBR values
     actor.setPosition(c * 1.2, r * 1.2, 0.0);
 
-    actor.getProperty().setRoughness(0.2 + c / objectCount); // The values only span from 0-0.8 instead of 0-1 because maxed values give bad results
+    actor.getProperty().setRoughness(0.2 + c / objectCount);
     actor.getProperty().setMetallic(r / objectCount);
     actor.getProperty().setBaseIOR(1.45);
     actor.getProperty().setDiffuseColor(1.0, 0.3, 0.2);
@@ -109,7 +105,6 @@ renderer.addLight(light3);
 renderer.addLight(light4);
 
 // Adding the directional light
-
 const light5 = vtkLight.newInstance();
 light5.setDirectionVector([0, 1, -1]);
 light5.setColor(1, 1, 1);
@@ -121,11 +116,6 @@ renderer.resetCamera();
 renderWindow.render();
 
 fpsMonitor.update();
-
-// -----------------------------------------------------------
-// UI control handling
-// -----------------------------------------------------------
-// fullScreenRenderer.addController(controlPanel);
 
 // -----------------------------------------------------------
 // Make some variables global so that you can inspect and

@@ -177,8 +177,6 @@ fn calcDirectionalLight(N: vec3<f32>, V: vec3<f32>, ior: f32, roughness: f32, me
   // Oren-Nayar gives a clay-like effect when fully rough which some people may not want, so it might be better to give a separate
   // control property for the diffuse vs specular roughness
   var diffuse: vec3<f32> = incoming*fujiiOrenNayar(base, roughness, N, L, V); 
-  // diffuse = lambertDiffuse(base, N, L);
-
   // Stores the specular and diffuse separately to allow for finer post processing
   // Could also be done (propably more properly) with a struct
   var out = PBRData(diffuse, specular);
@@ -1108,6 +1106,7 @@ function vtkWebGPUCellArrayMapper(publicAPI, model) {
     }
 
     for (let i = 0; i < textures.length; i++) {
+      console.log('added texture');
       if (
         textures[i][1].getInputData() ||
         textures[i][1].getJsImageData() ||
